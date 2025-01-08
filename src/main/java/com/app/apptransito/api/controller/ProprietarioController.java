@@ -2,6 +2,7 @@ package com.app.apptransito.api.controller;
 
 import com.app.apptransito.domain.model.Proprietario;
 import com.app.apptransito.domain.repository.ProprietarioRepository;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,12 +43,12 @@ public class ProprietarioController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Proprietario adicionar(@RequestBody Proprietario proprietario) {
+    public Proprietario adicionar(@Valid @RequestBody Proprietario proprietario) {
         return proprietarioRepository.save(proprietario);
     }
 
     @PutMapping("/{proprietarioId}")
-    public ResponseEntity<Proprietario> atualizar(@PathVariable Long proprietarioId,
+    public ResponseEntity<Proprietario> atualizar(@Valid @PathVariable Long proprietarioId,
                                                   @RequestBody Proprietario proprietario) {
         if (!proprietarioRepository.existsById(proprietarioId)) {
             return ResponseEntity.notFound().build();
