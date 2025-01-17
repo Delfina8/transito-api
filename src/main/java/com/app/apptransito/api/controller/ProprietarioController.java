@@ -44,7 +44,7 @@ public class ProprietarioController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Proprietario adicionar(@Valid @RequestBody Proprietario proprietario) {
+    public Proprietario cadastrar(@Valid @RequestBody Proprietario proprietario) {
         return registroProprietarioService.salvar(proprietario);
     }
 
@@ -70,9 +70,5 @@ public class ProprietarioController {
         return ResponseEntity.noContent().build();
     }
 
-    @ExceptionHandler(NegocioException.class)
-    public ResponseEntity<String> capturar(NegocioException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
 
 }
