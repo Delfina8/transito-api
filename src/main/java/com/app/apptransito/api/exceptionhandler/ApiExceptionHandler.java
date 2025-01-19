@@ -1,11 +1,11 @@
 package com.app.apptransito.api.exceptionhandler;
 
 import com.app.apptransito.domain.exception.NegocioException;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.*;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,9 +20,10 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(NegocioException.class)
-    public ResponseEntity<String> capturar(NegocioException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    private final MessageSource messageSource;
+
+    public ApiExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
     }
 
     @Override
@@ -33,14 +34,39 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         problemDetail.setTitle("Um ou mais campos estão inválidos");
         problemDetail.setType(URI.create("https://transitoapi.com/erros/campos-invalidos"));
 
+//        Map<String, String> fields = ex.getBindingResult().getAllErrors()
+//                .stream()
+//                .collect(Collectors.toMap(objectError -> ((FieldError) objectError).getField(),
+//                                          objectError -> objectError.getDefaultMessage()));
+
+        //Alterado para usar o message.properties
         Map<String, String> fields = ex.getBindingResult().getAllErrors()
                 .stream()
                 .collect(Collectors.toMap(objectError -> ((FieldError) objectError).getField(),
-                                          objectError -> objectError.getDefaultMessage()));
+                                          objectError -> messageSource.getMessage(objectError,
+                                                  LocaleContextHolder.getLocale())));
 
         problemDetail.setProperty("fields", fields);
 
         return this.handleExceptionInternal(ex, problemDetail, headers, status, request);
+    }
+
+    @ExceptionHandler(NegocioException.class)
+    public ProblemDetail handleNegocio(NegocioException e) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle(e.getMessage());
+        problemDetail.setType(URI.create("https://transitoapi.com/erros/regra-de-negocio"));
+
+        return problemDetail;
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrity(DataIntegrityViolationException e) {
+        ProblemDetail problemDetail = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problemDetail.setTitle("Recurso em uso.");
+        problemDetail.setType(URI.create("https://transitoapi.com/erros/recursos-em-uso"));
+
+        return problemDetail;
     }
 
 
